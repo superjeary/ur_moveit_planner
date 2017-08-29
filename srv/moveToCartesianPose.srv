@@ -1,0 +1,6 @@
+#inputs
+geometry_msgs/Pose target_pose
+---
+#outputs
+bool motionComplete
+
