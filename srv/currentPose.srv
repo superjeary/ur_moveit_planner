@@ -1,0 +1,6 @@
+#inputs
+geometry_msgs/PoseStamped poseStamped
+---
+#outputs
+bool motionComplete
+

@@ -5,6 +5,7 @@
 #include "std_srvs/Empty.h"
 #include "ur_moveit_planner/moveToCartesianPose.h"
 #include "ur_moveit_planner/moveToJointAngles.h"
+#include "ur_moveit_planner/currentPose.h"
 
 // Actions
 #include <actionlib/server/simple_action_server.h>
@@ -26,6 +27,9 @@ public:
 
   bool stopMovingCallback(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
 
+  //bool getCurrentPoseCallback(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
+  //bool getCurrentJointAnglesCallback(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
+
   void execute(const ur_moveit_planner::moveToCartesianPoseGoalConstPtr& goal);
 
 private:
@@ -34,6 +38,9 @@ private:
   ros::ServiceServer moveToCartesianPoseService;
   ros::ServiceServer moveToJointAnglesService;
   ros::ServiceServer stopMovingService;
+  ros::ServiceServer getCurrentPoseService;
+  ros::ServiceServer getCurrentJointAnglesService;
+  
 
   std::string target_ee_link;
 
@@ -44,6 +51,9 @@ private:
   moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
 
   actionlib::SimpleActionServer<ur_moveit_planner::moveToCartesianPoseAction> moveToCartesianPoseActionServer_; 
+
+  ros::Publisher _pubCurrentPose;
+  ros::Publisher _pubCurrentJointAngles;
 
   // tf::TransformListener tflistener;
 };

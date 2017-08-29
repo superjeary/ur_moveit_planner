@@ -57,7 +57,7 @@ class demo:
         #    print("Initialized")
 
     def e2q(self, roll, pitch, yaw):
-	q = Quaternion()
+	    q = Quaternion()
         quaternion = tf.transformations.quaternion_from_euler(roll,pitch,yaw)
         q.x = quaternion[0]
         q.y = quaternion[1]

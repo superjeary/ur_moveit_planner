@@ -1,6 +1,11 @@
 #include "ur_moveit_planner.h"
 #include <tf/transform_listener.h>    // Includes the TF conversions
 
+//#include "geometry_msgs/Pose.h"
+//#include "geometry_msgs/Point.h"
+//#include "geometry_msgs/Quaternion.h"
+#include "ur_moveit_planner/JointQuantity.h"
+
 UR_Moveit_Planning::UR_Moveit_Planning() : group("manipulator"), moveToCartesianPoseActionServer_(n_, 
     "ur_moveit_planner/moveToCartesianPoseAction", boost::bind(&UR_Moveit_Planning::execute, this, _1),false)
 {
@@ -9,6 +14,8 @@ UR_Moveit_Planning::UR_Moveit_Planning() : group("manipulator"), moveToCartesian
   moveToCartesianPoseService = n_.advertiseService("ur_moveit_planner/moveToCartesianPose", &UR_Moveit_Planning::moveToCartesianPoseCallback, this);
   moveToJointAnglesService = n_.advertiseService("ur_moveit_planner/moveToJointAnglesPose", &UR_Moveit_Planning::moveToJointAnglesCallback, this);
   stopMovingService = n_.advertiseService("ur_moveit_planner/stopMoving", &UR_Moveit_Planning::stopMovingCallback, this);
+  //getCurrentPoseService = n_.advertiseService("ur_moveit_planner/getCurrentPose", &UR_Moveit_Planning::getCurrentPoseCallback, this);
+  //getCurrentJointAnglesService = n_.advertiseService("ur_moveit_planner/getJointAngles", &UR_Moveit_Planning::getCurrentJointAnglesCallback, this);
 
   // Configure movegroup planners
   group.setPlanningTime(0.5);
@@ -22,6 +29,26 @@ UR_Moveit_Planning::UR_Moveit_Planning() : group("manipulator"), moveToCartesian
   ROS_INFO("Reference frame: %s", group.getEndEffectorLink().c_str());
 
   moveToCartesianPoseActionServer_.start();
+
+  _pubCurrentPose = n_.advertise<geometry_msgs::PoseStamped>("ur_moveit_planner/currentPose", 1);
+  _pubCurrentJointAngles = n_.advertise<ur_moveit_planner::JointQuantity>("ur_moveit_planner/currentJointAngles", 1);
+
+  while(ros::ok()){
+    geometry_msgs::PoseStamped currentPose = group.getCurrentPose();
+    _pubCurrentPose.publish(currentPose);
+
+    std::vector<double> currentJointValues = group.getCurrentJointValues();
+    ur_moveit_planner::JointQuantity currentJointAngles;
+    currentJointAngles.a1 = currentJointValues[0];
+    currentJointAngles.a2 = currentJointValues[1];
+    currentJointAngles.a3 = currentJointValues[2];
+    currentJointAngles.a4 = currentJointValues[3];
+    currentJointAngles.a5 = currentJointValues[4];
+    currentJointAngles.a6 = currentJointValues[5];
+    _pubCurrentJointAngles.publish(currentJointAngles);
+
+    ros::spinOnce();
+  }
 
 }
 
@@ -110,6 +137,22 @@ bool UR_Moveit_Planning::stopMovingCallback(std_srvs::Empty::Request  &req,
   group.stop();
   return true;
 }
+
+/*bool UR_Moveit_Planning::getCurrentPoseCallback(std_srvs::Empty::Request  &req,
+  std_srvs::Empty::Response &res)
+{
+  //_pubCurrentPose = n_.advertise<geometry_msgs::PoseStamped>("ur_moveit_planner/currentPose", 1);
+  
+  if(ros::ok()){
+    geometry_msgs::PoseStamped currentPose = group.getCurrentPose();
+    _pubCurrentPose.publish(currentPose);
+    ros::spinOnce();
+    
+    return true;
+  }
+
+    return false;
+}*/
 
 void UR_Moveit_Planning::execute(const ur_moveit_planner::moveToCartesianPoseGoalConstPtr& goal)
 {
