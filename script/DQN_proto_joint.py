@@ -221,10 +221,10 @@ class robotEnv:
         currentPose = copy.deepcopy(self.robotPose)
         self.distance = self.calcDistance(currentPose.position, self.goalPose)
 
-        if self.distance < 0.11:
+        if self.distance < 0.1:
             self.done = True
         #print(rospy.get_time() - self.startTime)
-        if rospy.get_time() - self.startTime > 30:
+        if rospy.get_time() - self.startTime > 10:
             self.timeOver = True
     
     def calcDistance(self,a,b):
