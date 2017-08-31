@@ -211,7 +211,7 @@ class robotEnv:
         #self.distance = math.sqrt(diffX*diffX+diffY*diffY+diffZ*diffZ)
         self.distance = self.calcDistance(currentPose.position, self.goalPose)
 
-        if self.distance < 0.01:
+        if self.distance < 0.1:
             self.done = True
         #print(rospy.get_time() - self.startTime)
         if rospy.get_time() - self.startTime > 30:
@@ -239,8 +239,10 @@ if __name__ == "__main__":
     # 報酬の割引率
     gamma = 0.95
     # Epsilon-greedyを使ってたまに冒険。50000ステップでend_epsilonとなる
-    explorer = chainerrl.explorers.LinearDecayEpsilonGreedy(
-        start_epsilon=1.0, end_epsilon=0.3, decay_steps=20000, random_action_func=ra.random_action_func)
+    #explorer = chainerrl.explorers.LinearDecayEpsilonGreedy(
+    #    start_epsilon=1.0, end_epsilon=0.3, decay_steps=20000, random_action_func=ra.random_action_func)
+    explorer = chainerrl.explorers.ConstantEpsilonGreedy(
+        epsilon=0.3, random_action_func=ra.random_action_func)
     # Experience ReplayというDQNで用いる学習手法で使うバッファ
     replay_buffer = chainerrl.replay_buffer.ReplayBuffer(capacity=10 ** 6)
     # Agentの生成（replay_buffer等を共有する2つ）

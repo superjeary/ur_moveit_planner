@@ -33,8 +33,10 @@ optimizer.setup(q_func)
 # 報酬の割引率
 gamma = 0.95
 # Epsilon-greedyを使ってたまに冒険。50000ステップでend_epsilonとなる
-explorer = chainerrl.explorers.LinearDecayEpsilonGreedy(
-    start_epsilon=1.0, end_epsilon=0.3, decay_steps=1000, random_action_func=ra.random_action_func)
+#explorer = chainerrl.explorers.LinearDecayEpsilonGreedy(
+#    start_epsilon=1.0, end_epsilon=0.3, decay_steps=1000, random_action_func=ra.random_action_func)
+explorer = chainerrl.explorers.ConstantEpsilonGreedy(
+        epsilon=0.3, random_action_func=ra.random_action_func)
 # Experience ReplayというDQNで用いる学習手法で使うバッファ
 replay_buffer = chainerrl.replay_buffer.ReplayBuffer(capacity=10 ** 6)
 # Agentの生成（replay_buffer等を共有する2つ）

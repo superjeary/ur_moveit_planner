@@ -43,7 +43,7 @@ class RandomActor:
     def random_action_func(self):
         self.random_count += 1
         #return self.env.move_random()
-        return random.randint(0,11)
+        return random.randint(0,5)
 
 
 # Define Agent And Environment
@@ -78,34 +78,36 @@ class robotEnv:
     def __init__(self):
         self.rotateUnit = 3.14/72
         self.actions = np.array([
-        [self.rotateUnit, 0.0, 0.0, 0.0, 0.0, 0.0], [-self.rotateUnit, 0.0, 0.0, 0.0, 0.0, 0.0],
+        #[self.rotateUnit, 0.0, 0.0, 0.0, 0.0, 0.0], [-self.rotateUnit, 0.0, 0.0, 0.0, 0.0, 0.0],
         [0.0, self.rotateUnit, 0.0, 0.0, 0.0, 0.0], [0.0, -self.rotateUnit, 0.0, 0.0, 0.0, 0.0],
         [0.0, 0.0, self.rotateUnit, 0.0, 0.0, 0.0], [0.0, 0.0, -self.rotateUnit, 0.0, 0.0, 0.0],
         [0.0, 0.0, 0.0, self.rotateUnit, 0.0, 0.0], [0.0, 0.0, 0.0, -self.rotateUnit, 0.0, 0.0],
-        [0.0, 0.0, 0.0, 0.0, self.rotateUnit, 0.0], [0.0, 0.0, 0.0, 0.0, -self.rotateUnit, 0.0],
-        [0.0, 0.0, 0.0, 0.0, 0.0, self.rotateUnit], [0.0, 0.0, 0.0, 0.0, 0.0, -self.rotateUnit]]) 
+        #[0.0, 0.0, 0.0, 0.0, self.rotateUnit, 0.0], [0.0, 0.0, 0.0, 0.0, -self.rotateUnit, 0.0],
+        #[0.0, 0.0, 0.0, 0.0, 0.0, self.rotateUnit], [0.0, 0.0, 0.0, 0.0, 0.0, -self.rotateUnit]
+        ]) 
 
         self.robotJointAngles = moveToJointAnglesGoal()
         self.robotState = np.array([0]*6, dtype=np.float32)
         self.TCPForce = 0
         self.done = False
         self.initJointAngles = moveToJointAnglesGoal()
-        self.initJointAngles.a1 = 0.0
-        self.initJointAngles.a2 = 0.0
-        self.initJointAngles.a3 = 0.0
-        self.initJointAngles.a4 = 0.0
-        self.initJointAngles.a5 = 0.0
-        self.initJointAngles.a6 = 0.0
+        self.initJointAngles.a1 = 0.0 /180*math.pi
+        self.initJointAngles.a2 = -90.0 /180*math.pi
+        self.initJointAngles.a3 = 90.0 /180*math.pi
+        self.initJointAngles.a4 = -90.0 /180*math.pi
+        self.initJointAngles.a5 = -90.0 /180*math.pi
+        self.initJointAngles.a6 = 90.0 /180*math.pi
 
         self.initPose = moveToCartesianPoseGoal()
-        self.initPose.x = 0.81
-        self.initPose.y = 0.19
-        self.initPose.z = -0.0054
-        self.initPose.u = 3.14
-        self.initPose.v = 0
-        self.initPose.w = 1.57
+        self.initPose.x = 0.4869
+        self.initPose.y = 0.1090
+        self.initPose.z = 0.5140
+        self.initPose.u = -90.0 /180*math.pi
+        self.initPose.v = 0.0 /180*math.pi
+        self.initPose.w = 180.0 /180*math.pi
         self.goalPose = moveToCartesianPoseGoal()
 
+        """
         self.goalJointAngles = moveToJointAnglesGoal()
         self.goalJointAngles.a1 = -0.0171
         self.goalJointAngles.a2 = -1.512
@@ -113,14 +115,15 @@ class robotEnv:
         self.goalJointAngles.a4 = 0.007
         self.goalJointAngles.a5 = -0.012
         self.goalJointAngles.a6 = 0.012
+        """
 
         self.goalPose = moveToCartesianPoseGoal()
-        self.goalPose.x = 0.567
+        self.goalPose.x = 0.55
         self.goalPose.y = 0.365
-        self.goalPose.z = 0.416
-        self.goalPose.u = -3.14
-        self.goalPose.v = 0
-        self.goalPose.w = 1.57
+        self.goalPose.z = 0.25
+        self.goalPose.u = -90.0 /180*math.pi
+        self.goalPose.v = 0.0 /180*math.pi
+        self.goalPose.w = 180.0 /180*math.pi
 
         self.initDistance = self.calcDistance(self.initPose, self.goalPose)
         self.distance = self.calcDistance(self.initPose, self.goalPose)
@@ -189,7 +192,7 @@ class robotEnv:
         return self.move(nextRobotJointAngles)
 
     def move_random(self):
-        r = random.randint(0,11)
+        r = random.randint(0,5)
         action = self.actions[r] 
         nextRobotJointAngles = moveToJointAnlgesGoal()
         currentRobotJointAngles = copy.deepcopy(self.robotJointAngles)
@@ -218,7 +221,7 @@ class robotEnv:
         currentPose = copy.deepcopy(self.robotPose)
         self.distance = self.calcDistance(currentPose.position, self.goalPose)
 
-        if self.distance < 0.01:
+        if self.distance < 0.11:
             self.done = True
         #print(rospy.get_time() - self.startTime)
         if rospy.get_time() - self.startTime > 30:
@@ -229,7 +232,7 @@ class robotEnv:
         diffY = a.y - b.y
         diffZ = a.z - b.z
         d = math.sqrt(diffX*diffX+diffY*diffY+diffZ*diffZ)
-        print("current disntance" + str(d)) 
+        #print("current disntance" + str(d)) 
         return d
 
 if __name__ == "__main__":
@@ -239,7 +242,7 @@ if __name__ == "__main__":
     ra = RandomActor(env)
 
     obs_size = 6
-    n_actions = 12
+    n_actions = 6
     q_func = QFunction(obs_size, n_actions)
     q_func.to_gpu(0) ## GPUを使いたい人はこのコメントを外す
     optimizer = chainer.optimizers.Adam(eps=1e-2)
@@ -247,8 +250,10 @@ if __name__ == "__main__":
     # 報酬の割引率
     gamma = 0.95
     # Epsilon-greedyを使ってたまに冒険。50000ステップでend_epsilonとなる
-    explorer = chainerrl.explorers.LinearDecayEpsilonGreedy(
-        start_epsilon=1.0, end_epsilon=0.3, decay_steps=1000, random_action_func=ra.random_action_func)
+    #explorer = chainerrl.explorers.LinearDecayEpsilonGreedy(
+    #    start_epsilon=1.0, end_epsilon=0.3, decay_steps=1000, random_action_func=ra.random_action_func)
+    explorer = chainerrl.explorers.ConstantEpsilonGreedy(
+        epsilon=0.3, random_action_func=ra.random_action_func)
     # Experience ReplayというDQNで用いる学習手法で使うバッファ
     replay_buffer = chainerrl.replay_buffer.ReplayBuffer(capacity=10 ** 6)
     # Agentの生成（replay_buffer等を共有する2つ）
@@ -298,6 +303,7 @@ if __name__ == "__main__":
                 last_state = env.robotState.copy()
 
         #コンソールに進捗表示
+        print("distance: ", env.distance)
         if i % 10 == 0:
             print("episode:", i, " / rnd:", ra.random_count, " / distance:", env.distance, " / statistics:", agent_p1.get_statistics(), " / epsilon:", agent_p1.explorer.epsilon)
             ra.random_count = 0
