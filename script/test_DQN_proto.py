@@ -18,7 +18,7 @@ from ur_moveit_planner.msg import moveToJointAnglesGoal
 from geometry_msgs.msg import PoseStamped, Pose, Point, Quaternion
 from ur_moveit_planner.msg import PoseRpy,JointQuantity
 
-from DQN_proto_joint import robotAgent, robotEnv, QFunction, RandomActor
+from DQN_proto import robotAgent, robotEnv, QFunction, RandomActor
 
 rospy.init_node('test_DQN')
 print("Training start.")
@@ -44,21 +44,22 @@ agent = chainerrl.agents.DoubleDQN(
     target_update_interval=100)
 agent.load("resultDQN_pose_100")
 
-for i in range(10):
-    env.reset()
-    
-    while not rospy.is_shutdown():
-        action = agent.act(env.robotState.copy())
-        if not env.move_action(action):
-            "Problem is occured!"
-            quit()
-        if env.done == True:
-            break
-        elif env.timeOver == True:
-            print("Time Over!!")
-            break
-    print("try " + str(i))
-    print("init distance", env.initDistance)
-    print("result Distance", env.distance)
-    print("")
+
+env.reset()
+
+while not rospy.is_shutdown():
+    action = agent.act(env.robotState.copy())
+    if not env.move_action(action):
+        "Problem is occured!"
+        quit()
+    if env.done == True:
+        break
+    elif env.timeOver == True:
+        print("Time Over!!")
+        break
+
+print("init distance", env.initDistance)
+print("result Distance", env.distance)
+print("")
+
 print("Test finished.")

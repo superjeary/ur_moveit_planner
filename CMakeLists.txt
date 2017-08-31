@@ -57,6 +57,8 @@ find_package(catkin REQUIRED COMPONENTS
  add_message_files(
    FILES
    JointQuantity.msg
+   Rpy.msg
+   PoseRpy.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -81,6 +83,7 @@ find_package(catkin REQUIRED COMPONENTS
    geometry_msgs
    std_msgs
    actionlib_msgs
+   moveit_msgs
  )
 
 ################################################
@@ -115,7 +118,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ur_moveit_planner
-  CATKIN_DEPENDS geometry_msgs roscpp rospy std_msgs
+  CATKIN_DEPENDS geometry_msgs roscpp rospy std_msgs moveit_msgs
 #  DEPENDS system_lib
 )
 

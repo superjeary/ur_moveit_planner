@@ -17,22 +17,20 @@ from geometry_msgs.msg import PoseStamped, Pose, Point, Quaternion
 from ur_moveit_planner.msg import PoseRpy
 
 
+#Q関数
 class QFunction(chainer.Chain):
-    def __init__(self, obs_size, n_actions, n_hidden_channels=50):
-        super(QFunction, self).__init__(##python2.x用
-        #super().__init__(#python3.x用
+    def __init__(self, obs_size, n_actions, n_hidden_channels=81):
+        super(QFunction, self).__init__(
             l0=L.Linear(obs_size, n_hidden_channels),
-            l1=L.Linear(n_hidden_channels,n_hidden_channels),
-            l2=L.Linear(n_hidden_channels, n_actions))
-        
-    def __call__(self, x, test=False): 
-        """
-        x ; 観測#ここの観測って、stateとaction両方？
-        test : テストモードかどうかのフラグ
-        """
-        h = F.tanh(self.l0(x)) #活性化関数は自分で書くの？
-        h = F.tanh(self.l1(h))
-        return chainerrl.action_value.DiscreteActionValue(self.l2(h))
+            l1=L.Linear(n_hidden_channels, n_hidden_channels),
+            l2=L.Linear(n_hidden_channels, n_hidden_channels),
+            l3=L.Linear(n_hidden_channels, n_actions))
+    def __call__(self, x, test=False):
+        #-1を扱うのでleaky_reluとした
+        h = F.leaky_relu(self.l0(x))
+        h = F.leaky_relu(self.l1(h))
+        h = F.leaky_relu(self.l2(h))
+        return chainerrl.action_value.DiscreteActionValue(self.l3(h))
 
 class RandomActor:
     def __init__(self,env):
@@ -171,16 +169,14 @@ class robotEnv:
 
     def move_action(self, act):
         action = self.actions[act]        
-        print act, action
+        #print act, action
         nextRobotPose = moveToCartesianPoseGoal()
         currentRobotPose = copy.deepcopy(self.robotPose )
         
         nextRobotPose.x = currentRobotPose.position.x + action[0]
         nextRobotPose.y = currentRobotPose.position.y + action[1]
         nextRobotPose.z = currentRobotPose.position.z + action[2]
-        if nextRobotPose.z < 0:
-            nextRobotPose.z = 0
-
+        
         nextRobotPose.u = currentRobotPose.rpy.u
         nextRobotPose.v = currentRobotPose.rpy.v
         nextRobotPose.w = currentRobotPose.rpy.w
@@ -217,7 +213,7 @@ class robotEnv:
 
         if self.distance < 0.01:
             self.done = True
-        print(rospy.get_time() - self.startTime)
+        #print(rospy.get_time() - self.startTime)
         if rospy.get_time() - self.startTime > 30:
             self.timeOver = True
     
@@ -226,75 +222,75 @@ class robotEnv:
         diffY = a.y - b.y
         diffZ = a.z - b.z
         d = math.sqrt(diffX*diffX+diffY*diffY+diffZ*diffZ)
-        print("current disntance" + str(d)) 
+        #print("current disntance: " + str(d)) 
         return d
+if __name__ == "__main__":
+    rospy.init_node('action_client_DQN')
+    print("Training start.")
+    env = robotEnv()
+    ra = RandomActor(env)
 
-rospy.init_node('action_client_DQN')
-print("Training start.")
-env = robotEnv()
-ra = RandomActor(env)
+    obs_size = 6
+    n_actions = 4
+    q_func = QFunction(obs_size, n_actions)
+    q_func.to_gpu(0) ## GPUを使いたい人はこのコメントを外す
+    optimizer = chainer.optimizers.Adam(eps=1e-2)
+    optimizer.setup(q_func)
+    # 報酬の割引率
+    gamma = 0.95
+    # Epsilon-greedyを使ってたまに冒険。50000ステップでend_epsilonとなる
+    explorer = chainerrl.explorers.LinearDecayEpsilonGreedy(
+        start_epsilon=1.0, end_epsilon=0.3, decay_steps=20000, random_action_func=ra.random_action_func)
+    # Experience ReplayというDQNで用いる学習手法で使うバッファ
+    replay_buffer = chainerrl.replay_buffer.ReplayBuffer(capacity=10 ** 6)
+    # Agentの生成（replay_buffer等を共有する2つ）
+    agent_p1 = chainerrl.agents.DoubleDQN(
+        q_func, optimizer, replay_buffer, gamma, explorer,
+        replay_start_size=500, update_interval=1,
+        target_update_interval=100)
 
-obs_size = 6
-n_actions = 4
-q_func = QFunction(obs_size, n_actions)
-q_func.to_gpu(0) ## GPUを使いたい人はこのコメントを外す
-optimizer = chainer.optimizers.Adam(eps=1e-2)
-optimizer.setup(q_func)
-# 報酬の割引率
-gamma = 0.95
-# Epsilon-greedyを使ってたまに冒険。50000ステップでend_epsilonとなる
-explorer = chainerrl.explorers.LinearDecayEpsilonGreedy(
-    start_epsilon=1.0, end_epsilon=0.3, decay_steps=1000, random_action_func=ra.random_action_func)
-# Experience ReplayというDQNで用いる学習手法で使うバッファ
-replay_buffer = chainerrl.replay_buffer.ReplayBuffer(capacity=10 ** 6)
-# Agentの生成（replay_buffer等を共有する2つ）
-agent_p1 = chainerrl.agents.DoubleDQN(
-    q_func, optimizer, replay_buffer, gamma, explorer,
-    replay_start_size=500, update_interval=1,
-    target_update_interval=100)
-
-#学習ゲーム回数
-n_episodes = 100
-#エピソードの繰り返し実行
-for i in range(1, n_episodes + 1):
-    print("##### Episode: " + str(i) + "#####")
-    env.reset()
-    reward = 0
-    agents = agent_p1
-    last_state = None
-    #while not env.done or not env.timeOver:
-    while not rospy.is_shutdown():
-        old_dist = env.distance
-        action = agents.act_and_train(env.robotState.copy(), reward)
-        #配置を実行
-        env.move_action(action)
-        #配置の結果、終了時には報酬とカウンタに値をセットして学習
-        if env.done == True:
-            reward = 5
-            #エピソードを終了して学習
-            agents.stop_episode_and_train(env.robotState.copy(), reward, True)
-            break
-        elif env.timeOver == True:
-            print("Time Over!!")
-            if env.initDistance > env.distance:
-                reward = 1
-            elif env.initDistance < env.distance:
-                reward = -1
+    #学習ゲーム回数
+    n_episodes = 10000
+    #エピソードの繰り返し実行
+    for i in range(1, n_episodes + 1):
+        print("##### Episode: " + str(i) + "#####")
+        env.reset()
+        reward = 0
+        agents = agent_p1
+        last_state = None
+        #while not env.done or not env.timeOver:
+        while not rospy.is_shutdown():
+            old_dist = env.distance
+            action = agents.act_and_train(env.robotState.copy(), reward)
+            #配置を実行
+            env.move_action(action)
+            #配置の結果、終了時には報酬とカウンタに値をセットして学習
+            if env.done == True:
+                reward = 5
+                #エピソードを終了して学習
+                agents.stop_episode_and_train(env.robotState.copy(), reward, True)
+                break
+            elif env.timeOver == True:
+                #print("Time Over!!")
+                if env.initDistance > env.distance:
+                    reward = 1
+                elif env.initDistance < env.distance:
+                    reward = -1
+                else:
+                    reward = 0
+                #エピソードを終了して学習
+                agents.stop_episode_and_train(env.robotState.copy(), reward, True)
+                break
             else:
-                reward = 0
-            #エピソードを終了して学習
-            agents.stop_episode_and_train(env.robotState.copy(), reward, True)
-            break
-        else:
-            #学習用にターン最後の状態を退避
-            last_state = env.robotState.copy()
+                #学習用にターン最後の状態を退避
+                last_state = env.robotState.copy()
 
-    #コンソールに進捗表示
-    if i % 10 == 0:
-        print("episode:", i, " / rnd:", ra.random_count, " / distance:", env.distance, " / statistics:", agent_p1.get_statistics(), " / epsilon:", agent_p1.explorer.epsilon)
-        ra.random_count = 0
-    if i % 50 == 0:
-        # 10000エピソードごとにモデルを保存
-        agent_p1.save("resultDQN_pose_" + str(i))
+        #コンソールに進捗表示
+        if i % 100 == 0:
+            print("episode:", i, " / rnd:", ra.random_count, " / distance:", env.distance, " / statistics:", agent_p1.get_statistics(), " / epsilon:", agent_p1.explorer.epsilon)
+            ra.random_count = 0
+        if i % 2000 == 0:
+            # 10000エピソードごとにモデルを保存
+            agent_p1.save("resultDQN_pose_" + str(i))
 
-print("Training finished.")
+    print("Training finished.")

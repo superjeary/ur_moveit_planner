@@ -10,6 +10,7 @@
 // Actions
 #include <actionlib/server/simple_action_server.h>
 #include "ur_moveit_planner/moveToCartesianPoseAction.h"
+#include "ur_moveit_planner/moveToJointAnglesAction.h"
 
 class UR_Moveit_Planning
 {
@@ -20,6 +21,7 @@ public:
   bool initializePositions(); // Populates joint angles/positions we use. Called during startup.
 
   bool moveToCartesianPose(geometry_msgs::Pose target_pose, moveit::planning_interface::MoveGroup &group);
+  bool moveToCartesianPoseLIN(geometry_msgs::Pose target_pose, moveit::planning_interface::MoveGroup &group);
   bool moveToCartesianPoseCallback(ur_moveit_planner::moveToCartesianPose::Request &req, ur_moveit_planner::moveToCartesianPose::Response &res);
 
   bool moveToJointAngles(const double& a1, const double& a2, const double& a3, const double& a4, const double& a5, const double& a6, moveit::planning_interface::MoveGroup &group);
@@ -30,7 +32,8 @@ public:
   //bool getCurrentPoseCallback(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
   //bool getCurrentJointAnglesCallback(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
 
-  void execute(const ur_moveit_planner::moveToCartesianPoseGoalConstPtr& goal);
+  void executeCartesianPose(const ur_moveit_planner::moveToCartesianPoseGoalConstPtr& goal);
+  void executeJointAngles(const ur_moveit_planner::moveToJointAnglesGoalConstPtr& goal);
 
 private:
   ros::NodeHandle n_;
@@ -50,9 +53,11 @@ private:
 
   moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
 
-  actionlib::SimpleActionServer<ur_moveit_planner::moveToCartesianPoseAction> moveToCartesianPoseActionServer_; 
+  actionlib::SimpleActionServer<ur_moveit_planner::moveToCartesianPoseAction> moveToCartesianPoseActionServer_;
+  actionlib::SimpleActionServer<ur_moveit_planner::moveToJointAnglesAction> moveToJointAnglesActionServer_;
 
   ros::Publisher _pubCurrentPose;
+  ros::Publisher _pubCurrentPoseRpy;
   ros::Publisher _pubCurrentJointAngles;
 
   // tf::TransformListener tflistener;
