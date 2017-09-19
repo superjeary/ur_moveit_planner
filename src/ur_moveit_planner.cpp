@@ -23,19 +23,17 @@ UR_Moveit_Planning::UR_Moveit_Planning() : group("manipulator"), moveToCartesian
   // Configure movegroup planners
   group.setPlanningTime(0.5);
   //group.setPlannerId("RRTConnectkConfigDefault");
-  group.setEndEffectorLink("wrist_3_link");
+  group.setEndEffectorLink("ee_link");
 
-  /*moveit_msgs::OrientationConstraint ocm;
-  ocm.link_name = "base_link";
-  ocm.header.frame_id = "base_link";
-  ocm.orientation.w = 1.0;
-  ocm.absolute_x_axis_tolerance = 0.1;
-  ocm.absolute_y_axis_tolerance = 0.1;
-  ocm.absolute_z_axis_tolerance = 0.1;
+  /*moveit_msgs::JointConstraint ocm;
+  ocm.joint_name = "shoulder_pan_joint";
+  ocm.position = 0.0;
+  ocm.tolerance_above = 90.0/180.0*3.14;
+  ocm.tolerance_below = 90.0/180.0*3.14;
   ocm.weight = 1.0;
 
   moveit_msgs::Constraints test_constraints;
-  test_constraints.orientation_constraints.push_back(ocm);
+  test_constraints.joint_constraints.push_back(ocm);
   group.setPathConstraints(test_constraints);*/
 
   // We can print the name of the reference frame for this robot.
