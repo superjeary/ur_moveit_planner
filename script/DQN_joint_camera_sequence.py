@@ -294,7 +294,7 @@ if __name__ == "__main__":
                 #print(action)
                 #配置を実行
                 if not env.move_action(action):
-                    print("Problem is occured!")
+                    print("Problem was occured!")
                     quit()
 
                 if env.timeOver == True:
@@ -317,7 +317,7 @@ if __name__ == "__main__":
                 ra.random_count = 0
             if i % 50 == 0:
                 # 100エピソードごとにモデルを保存
-                agent_p1.save("result_joint_camera_sequence/resultDQN_joint_" + str(i))
+                agent_p1.save("result_joint_camera_sequence/_test_resultDQN_joint_" + str(i))
 
         env.delete_gazebo_models()
         print("Training finished.")
