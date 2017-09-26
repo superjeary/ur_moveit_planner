@@ -156,6 +156,12 @@ add_dependencies(ur_moveit_planner
 )
 target_link_libraries(ur_moveit_planner ${catkin_LIBRARIES})
 
+add_executable(sensor src/sensor.cpp)
+add_dependencies(sensor
+	${${PROJECT_NAME}_EXPORTED_TARGETS}
+  	${catkin_EXPORTED_TARGETS}	
+)
+target_link_libraries(sensor ${catkin_LIBRARIES})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
