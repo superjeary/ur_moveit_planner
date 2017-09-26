@@ -16,7 +16,6 @@ from ur_moveit_planner.msg import moveToCartesianPoseAction
 from ur_moveit_planner.msg import moveToCartesianPoseGoal
 from ur_moveit_planner.msg import moveToJointAnglesAction
 from ur_moveit_planner.msg import moveToJointAnglesGoal
-from gazebo_msgs.srv import SpawnModel, DeleteModel
 from geometry_msgs.msg import PoseStamped, Pose, Point, Quaternion
 from ur_moveit_planner.msg import PoseRpy,JointQuantity
 
@@ -80,9 +79,18 @@ class robotEnv:
         self.TCPForce = 0
         self.done = False
         self.initJointAngles = moveToJointAnglesGoal()
-        self.initJointAngles.a1 = -120.0 /180*math.pi
+        """
+        self.initJointAngles.a1 = 0.0 /180*math.pi
         self.initJointAngles.a2 = -90.0 /180*math.pi
         self.initJointAngles.a3 = 90.0 /180*math.pi
+        self.initJointAngles.a4 = -90.0 /180*math.pi
+        self.initJointAngles.a5 = -90.0 /180*math.pi
+        self.initJointAngles.a6 = 90.0 /180*math.pi
+        """
+
+        self.initJointAngles.a1 = -120.0 /180*math.pi
+        self.initJointAngles.a2 = -90.0 /180*math.pi
+        self.initJointAngles.a3 = -90.0 /180*math.pi
         self.initJointAngles.a4 = -90.0 /180*math.pi
         self.initJointAngles.a5 = 90.0 /180*math.pi
         self.initJointAngles.a6 = 0 /180*math.pi
@@ -103,7 +111,8 @@ class robotEnv:
         
         #FOR Camera
         self.bridge = CvBridge()
-        self.image_sub = rospy.Subscriber("/gazebo/camera1/image_raw",Image,self.cameraCallback)
+        #self.image_sub = rospy.Subscriber("/gazebo/camera1/image_raw",Image,self.cameraCallback)
+        self.image_sub = rospy.Subscriber("/usb_cam/image_raw",Image,self.cameraCallback)
         self.image_raw = None
         self.image_resize = None
 
@@ -112,7 +121,6 @@ class robotEnv:
         self.action_client = actionlib.SimpleActionClient("ur_moveit_planner/moveToJointAnglesAction",moveToJointAnglesAction)
         self.action_client.wait_for_server()
         rospy.loginfo("server ON")
-        self.spawn_gazebo_models()
 
         self.reset()
 
@@ -165,36 +173,7 @@ class robotEnv:
         self.robotJointAngles.a5 = req.a5
         self.robotJointAngles.a6 = req.a6
 
-    def spawn_gazebo_models(self, name="candy", 
-                            model_type="ball",
-                            model_pose=Pose(position=Point(x=0.6, y=0.3, z=0.2)),
-                            model_reference_frame="world"):
-        # Get Models' Path
-        model_path = rospkg.RosPack().get_path('ur_moveit_planner')+"/models/"
-
-        # Load model URDF
-        model_xml = ''
-        with open (model_path + model_type +".urdf", "r") as ball_file:
-            model_xml=ball_file.read().replace('\n', '')
-
-        # Spawn ball URDF
-        rospy.wait_for_service('/gazebo/spawn_urdf_model')
-        try:
-            spawn_urdf = rospy.ServiceProxy('/gazebo/spawn_urdf_model', SpawnModel)
-            resp_urdf = spawn_urdf(name, model_xml, "/", model_pose, model_reference_frame)
-            return True
-
-        except rospy.ServiceException, e:
-            rospy.logerr("Spawn URDF service call failed: {0}".format(e))
-            return False
-
-    def delete_gazebo_models(self, name="candy"):
-        try:
-            delete_model = rospy.ServiceProxy('/gazebo/delete_model', DeleteModel)
-            resp_delete = delete_model(name)
-        except rospy.ServiceException, e:
-            rospy.loginfo("Delete Model service call failed: {0}".format(e))
-
+    
     def cameraCallback(self,data):
         try:
             self.image_raw = self.bridge.imgmsg_to_cv2(data, "bgr8")
@@ -277,6 +256,7 @@ if __name__ == "__main__":
         replay_start_size=32, update_interval=1,
         target_update_interval=32*10)
 
+    r=rospy.Rate(10)
     #学習ゲーム回数
     n_episodes = 1000
     #エピソードの繰り返し実行
@@ -308,7 +288,9 @@ if __name__ == "__main__":
                     print("Time Over!!")
                     #学習
                     agent_p1.stop_episode_and_train(env.state, reward, True)
-                    break            
+                    break
+                
+                r.sleep()
 
             #コンソールに進捗表示
             print("Area: ", env.area)
@@ -316,13 +298,12 @@ if __name__ == "__main__":
                 print("episode:", i, " / rnd:", ra.random_count, " / area:", env.area, " / statistics:", agent_p1.get_statistics(), " / epsilon:", agent_p1.explorer.epsilon)
                 ra.random_count = 0
             if i % 50 == 0:
+                pass
                 # 100エピソードごとにモデルを保存
                 #agent_p1.save("result_joint_camera_sequence/_test_resultDQN_joint_" + str(i))
-                agent_p1.save("real_robot_test_" + str(i))
+                #agent_p1.save("real_robot_test_" + str(i))
 
-        env.delete_gazebo_models()
         print("Training finished.")
     except KeyboardInterrupt:
         print("Key Board Interrupt")
-    finally:
-        env.delete_gazebo_models()
+

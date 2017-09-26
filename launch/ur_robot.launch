@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+    <include file="$(find ur_modern_driver)/launch/ur5_bringup_joint_limited.launch">
+        <arg name="robot_ip" value="192.168.1.101"/>
+    </include>
+    
+    <include file="$(find ur5_moveit_config)/launch/ur5_moveit_planning_execution.launch">
+        <arg name="sim" value="false"/>
+        <arg name="limited" value="true"/>
+    </include>
+  
+    <include file="$(find ur5_moveit_config)/launch/moveit_rviz.launch">
+        <arg name="config" value="true"/> 
+    </include>
+
+    <node pkg="ur_moveit_planner" type="ur_moveit_planner" name="ur_moveit_planner" />
+    <!--<node pkg="ur_moveit_planner" type="sensor" name="sensor" />-->
+    <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
+        <param name="video_device" value="/dev/video0" />
+        <param name="image_width" value="640" />
+        <param name="image_height" value="480" />
+        <param name="pixel_format" value="yuyv" />
+        <param name="camera_frame_id" value="usb_cam" />
+        <param name="io_method" value="mmap"/>
+    </node>
+    <node pkg="image_view" type="image_view" name="image_view" >
+        <remap from="image" to="/usb_cam/image_raw"/>
+        <param name="autosize" value="true"/>
+    </node>
+
+
+</launch>   

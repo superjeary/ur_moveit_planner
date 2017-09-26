@@ -24,6 +24,8 @@ UR_Moveit_Planning::UR_Moveit_Planning() : group("manipulator"), moveToCartesian
   group.setPlanningTime(0.5);
   //group.setPlannerId("RRTConnectkConfigDefault");
   group.setEndEffectorLink("ee_link");
+  group.setMaxVelocityScalingFactor(1);
+  group.setMaxAccelerationScalingFactor(0.1);
 
   /*moveit_msgs::JointConstraint ocm;
   ocm.joint_name = "shoulder_pan_joint";
@@ -176,7 +178,8 @@ bool UR_Moveit_Planning::moveToJointAngles(const double& a1, const double& a2, c
     {
        ROS_INFO_STREAM("robot move");
        //motion_done = group.execute(myplan);
-       motion_done = group.move();
+       motion_done = group.asyncMove();
+       //motion_done = group.move();
     } 
     else if (!success_plan) 
     {

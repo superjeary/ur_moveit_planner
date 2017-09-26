@@ -14,5 +14,6 @@
     </include>
 
     <node pkg="ur_moveit_planner" type="ur_moveit_planner" name="ur_moveit_planner" />
+    <node pkg="ur_moveit_planner" type="sensor" name="sensor" />
 
 </launch>
