@@ -8,7 +8,7 @@ https://github.com/ros-industrial/universal_robot
 
 https://github.com/ThomasTimm/ur_modern_driver
 
-# install
+# Install
 ```
 cd ~/(YOUR_CATKIN_WORKSPACE)/src
 git clone https://github.com/yupos0221/ur_moveit_planner.git
@@ -18,9 +18,9 @@ catkin_make
 
 
 # How to use with real hardware
-## 1. Bring up UR5 and startup server
+## 1. Bring up UR5 and start-up server
 ```
-roslaunch ur_moveit_plannner ur_robot.launch
+roslaunch ur_moveit_planner ur_robot.launch
 ```
 
 ## 2. Running the sample (in new terminal)
@@ -31,9 +31,9 @@ python action_client.py
 ```
 
 # How to use with simulation
-## 1. Bring up gazebo and startup server
+## 1. Bring up gazebo and start-up server
 ```
-roslaunch ur_moveit_plannner ur_gazebo.launch
+roslaunch ur_moveit_planner ur_gazebo.launch
 ```
 
 ## 2. Running the sample (in new terminal)
