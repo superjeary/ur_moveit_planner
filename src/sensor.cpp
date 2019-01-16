@@ -21,20 +21,15 @@ int main(int argc, char **argv)
 
 	ros::Rate loop_rate(10);
 
-	int				status;
-	FILE			*fd;
 	int				fdc;
-	char			fname[64];
 	char			devname[64];
 	char			str[256];
-	char			str2[256];
 	unsigned short	data[6];
-	int				comNo;
 	int				tick;
-	int				clk, clkb, clkb2, clk0;
+	int				clk, clkb, clk0;
 	int				tw;
 	int				NUM;
-	int				n,m;
+	int				m;
 	int 			count;
 	float 			sum[6];
 
@@ -50,7 +45,6 @@ int main(int argc, char **argv)
 		sum[m]=0;
 	}
 
-	fd = NULL;
 	fdc = -1;
 
 	sprintf(devname, "/dev/ttyUSB_dynpick");

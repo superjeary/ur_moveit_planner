@@ -7,9 +7,9 @@
 #include "ur_moveit_planner/JointQuantity.h"
 #include "ur_moveit_planner/PoseRpy.h"
 
-UR_Moveit_Planning::UR_Moveit_Planning() : group("manipulator"), moveToCartesianPoseActionServer_(n_, 
+UR_Moveit_Planning::UR_Moveit_Planning() : group("manipulator"), moveToCartesianPoseActionServer_(n_,
     "ur_moveit_planner/moveToCartesianPoseAction", boost::bind(&UR_Moveit_Planning::executeCartesianPose, this, _1),false),
-    moveToJointAnglesActionServer_(n_, 
+    moveToJointAnglesActionServer_(n_,
       "ur_moveit_planner/moveToJointAnglesAction", boost::bind(&UR_Moveit_Planning::executeJointAngles, this, _1),false)
 {
   ROS_INFO_STREAM("Constructor of UR_Moveit_Planning class that contains movegroup has started.");
@@ -40,7 +40,7 @@ UR_Moveit_Planning::UR_Moveit_Planning() : group("manipulator"), moveToCartesian
 
   // We can print the name of the reference frame for this robot.
   ROS_INFO("Reference frame: %s", group.getPlanningFrame().c_str());
-  
+
   // We can also print the name of the end-effector link for this group.
   ROS_INFO("Reference frame: %s", group.getEndEffectorLink().c_str());
 
@@ -50,17 +50,20 @@ UR_Moveit_Planning::UR_Moveit_Planning() : group("manipulator"), moveToCartesian
   _pubCurrentPose = n_.advertise<geometry_msgs::PoseStamped>("ur_moveit_planner/currentPose", 1);
   _pubCurrentPoseRpy = n_.advertise<ur_moveit_planner::PoseRpy>("ur_moveit_planner/currentPoseRpy", 1);
   _pubCurrentJointAngles = n_.advertise<ur_moveit_planner::JointQuantity>("ur_moveit_planner/currentJointAngles", 1);
-  
 
-  while(ros::ok()){
+  while (ros::ok())
+  {
     geometry_msgs::PoseStamped currentPose = group.getCurrentPose();
     _pubCurrentPose.publish(currentPose);
 
     ur_moveit_planner::PoseRpy currentPoseRpy;
     currentPoseRpy.position = currentPose.pose.position;
 
-    double r,p,y;//出力値
-    tf::Quaternion quat(currentPose.pose.orientation.x,currentPose.pose.orientation.y,currentPose.pose.orientation.z,currentPose.pose.orientation.w);
+    double r, p, y;//出力値
+    tf::Quaternion quat(currentPose.pose.orientation.x,
+            currentPose.pose.orientation.y,
+            currentPose.pose.orientation.z,
+            currentPose.pose.orientation.w);
     tf::Matrix3x3(quat).getRPY(r, p, y);//クォータニオン→オイラー角
     currentPoseRpy.rpy.u = r;
     currentPoseRpy.rpy.v = p;
@@ -85,30 +88,30 @@ UR_Moveit_Planning::UR_Moveit_Planning() : group("manipulator"), moveToCartesian
 bool UR_Moveit_Planning::moveToCartesianPose(geometry_msgs::Pose target_pose, moveit::planning_interface::MoveGroup &group)
 {
   geometry_msgs::PoseStamped command_cartesian_position;
-  bool success_plan = false, motion_done = false, new_pose = false;
-  while (ros::ok()) {     
-    command_cartesian_position = group.getCurrentPose(target_ee_link);  
+  bool success_plan = false, motion_done = false;
+  while (ros::ok())
+  {
+    command_cartesian_position = group.getCurrentPose(target_ee_link);
     command_cartesian_position.pose = target_pose;
-    
+
     group.setStartStateToCurrentState();
     group.setPoseTarget(command_cartesian_position, target_ee_link);
-    success_plan = group.plan(myplan);
-    if (success_plan) 
+    success_plan = (group.plan(myplan) == moveit_msgs::MoveItErrorCodes::SUCCESS);
+    if (success_plan)
     {
-       motion_done = group.execute(myplan);
-    } 
-    else if (!success_plan) 
+       motion_done = (group.execute(myplan) == moveit_msgs::MoveItErrorCodes::SUCCESS);
+    }
+    else if (!success_plan)
     {
        ROS_ERROR_STREAM("No path to the target point has been found!");
        return false;
     }
-    if (motion_done) 
+    if (motion_done)
     {
        break;
     }
   }
   return true;
-  
 }
 
 bool UR_Moveit_Planning::moveToCartesianPoseLIN(geometry_msgs::Pose target_pose, moveit::planning_interface::MoveGroup &group)
@@ -116,8 +119,8 @@ bool UR_Moveit_Planning::moveToCartesianPoseLIN(geometry_msgs::Pose target_pose,
   geometry_msgs::Pose command_cartesian_position;
   std::vector<geometry_msgs::Pose> waypoints;
   //group.setMaxVelocityScalingFactor(0.1);
-  bool success_plan = false, motion_done = false, new_pose = false;
-  while (ros::ok()) {     
+  bool success_plan = false, motion_done = false;
+  while (ros::ok()) {
     command_cartesian_position = target_pose;
     waypoints.push_back(target_pose);
     moveit_msgs::RobotTrajectory trajectory;
@@ -127,27 +130,28 @@ bool UR_Moveit_Planning::moveToCartesianPoseLIN(geometry_msgs::Pose target_pose,
     ROS_INFO_NAMED("tutorial", "Visualizing plan 4 (cartesian path) (%.2f%% acheived)", fraction * 100.0);
     group.setStartStateToCurrentState();
     int point_num = trajectory.joint_trajectory.points.size();
-    for(int i=0;i < point_num;i++){
+    for (int i = 0; i < point_num; i++)
+    {
       std::vector<double> joint_value = trajectory.joint_trajectory.points[i].positions;
       group.setJointValueTarget(joint_value);
     }
-    success_plan = group.plan(myplan);
-    if (success_plan) 
+    success_plan = (group.plan(myplan) == moveit_msgs::MoveItErrorCodes::SUCCESS);
+    if (success_plan)
     {
-       motion_done = group.execute(myplan);
-    } 
-    else if (!success_plan) 
+       motion_done = (group.execute(myplan) == moveit_msgs::MoveItErrorCodes::SUCCESS);
+    }
+    else if (!success_plan)
     {
        ROS_ERROR_STREAM("No path to the target point has been found!");
        return false;
     }
-    if (motion_done) 
+    if (motion_done)
     {
        break;
     }
   }
   return true;
-  
+
 }
 
 
@@ -163,7 +167,8 @@ bool UR_Moveit_Planning::moveToJointAngles(const double& a1, const double& a2, c
 {
   std::vector<double> command_joint_angles_values;
   bool success_plan = false, motion_done = false;
-  while (ros::ok()) {
+  while (ros::ok())
+  {
     group.getCurrentState()->copyJointGroupPositions(group.getCurrentState()->getRobotModel()->getJointModelGroup(group.getName()), command_joint_angles_values);
     command_joint_angles_values[0] = a1;
     command_joint_angles_values[1] = a2;
@@ -171,22 +176,22 @@ bool UR_Moveit_Planning::moveToJointAngles(const double& a1, const double& a2, c
     command_joint_angles_values[3] = a4;
     command_joint_angles_values[4] = a5;
     command_joint_angles_values[5] = a6;
- 
+
     group.setJointValueTarget(command_joint_angles_values);
-    success_plan = group.plan(myplan);
-    if (success_plan) 
+    success_plan = (group.plan(myplan) == moveit_msgs::MoveItErrorCodes::SUCCESS);
+    if (success_plan)
     {
        ROS_INFO_STREAM("robot move");
        //motion_done = group.execute(myplan);
-       motion_done = group.asyncMove();
+       motion_done = (group.asyncMove() == moveit_msgs::MoveItErrorCodes::SUCCESS);
        //motion_done = group.move();
-    } 
-    else if (!success_plan) 
+    }
+    else if (!success_plan)
     {
        ROS_ERROR_STREAM("No path to the target point has been found!");
        return false;
     }
-    if (motion_done) 
+    if (motion_done)
     {
        break;
     }
@@ -200,7 +205,6 @@ bool UR_Moveit_Planning::moveToJointAnglesCallback(ur_moveit_planner::moveToJoin
 {
   ROS_INFO_STREAM("Entered moveToJointAngles service.");
   return moveToJointAngles(req.a1, req.a2, req.a3, req.a4, req.a5, req.a6, group);
-  
 }
 
 bool UR_Moveit_Planning::stopMovingCallback(std_srvs::Empty::Request  &req,
@@ -214,12 +218,12 @@ bool UR_Moveit_Planning::stopMovingCallback(std_srvs::Empty::Request  &req,
   std_srvs::Empty::Response &res)
 {
   //_pubCurrentPose = n_.advertise<geometry_msgs::PoseStamped>("ur_moveit_planner/currentPose", 1);
-  
+
   if(ros::ok()){
     geometry_msgs::PoseStamped currentPose = group.getCurrentPose();
     _pubCurrentPose.publish(currentPose);
     ros::spinOnce();
-    
+
     return true;
   }
 
@@ -252,7 +256,7 @@ void UR_Moveit_Planning::executeCartesianPose(const ur_moveit_planner::moveToCar
 void UR_Moveit_Planning::executeJointAngles(const ur_moveit_planner::moveToJointAnglesGoalConstPtr& goal)
 {
   ROS_INFO("moveToJointAnlgesAction was called");
-  
+
   moveToJointAngles(goal->a1, goal->a2, goal->a3, goal->a4, goal->a5, goal->a6, group);
   //std::this_thread::sleep_for(std::chrono::milliseconds(200)); //default 2000
   ROS_INFO("moveToJointAnglesPTPAction is set as succeeded");
@@ -271,8 +275,6 @@ int main(int argc, char **argv)
   // ros::NodeHandle n;
   //Create an object of class UR_Moveit_Planning that will take care of everything
   UR_Moveit_Planning URObject;
-
-  
 
   ROS_INFO("ur_moveit_planner node has started");
 

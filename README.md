@@ -2,17 +2,42 @@
 moveit planner server for universal robot ur5
 
 # Preparation
-Check out these packages on your catkin workspace
+Check out or install these packages on your catkin workspace
 
-https://github.com/ros-industrial/universal_robot
+## Indigo
+```
+cd ~/(YOUR_CATKIN_WORKSPACE)/src
+sudo apt-get install ros-indigo-opencv3
+git clone https://github.com/ros-industrial/universal_robot
+git clone https://github.com/ThomasTimm/ur_modern_driver
+git clone https://github.com/yupos0221/ur_moveit_planner.git
+```
 
-https://github.com/ThomasTimm/ur_modern_driver
+## kinetic
+```
+cd (YOUR_CATKIN_WORKSPACE)/src
+sudo apt-get install ros-kinetic-opencv3
+git clone https://github.com/ros-industrial/universal_robot
+git clone -b iron-kinetic-devel https://github.com/iron-ox/ur_modern_driver
+git clone https://github.com/yupos0221/ur_moveit_planner.git
+```
+
+Change ur_moveit_planner/CMakeLists.txt to compile for kinetic
+
+Enable ``add_compile_options(-std=c++11)``
+```
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+cmake_minimum_required(VERSION 2.8.3)
+project(ur_moveit_planner)
+
+## Compile as C++11, supported in ROS Kinetic and newer
+add_compile_options(-std=c++11)
+```
 
 # Install
 ```
-cd ~/(YOUR_CATKIN_WORKSPACE)/src
-git clone https://github.com/yupos0221/ur_moveit_planner.git
-cd ../
+cd (YOUR_CATKIN_WORKSPACE)
 catkin_make
 ```
 
